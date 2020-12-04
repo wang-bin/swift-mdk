@@ -1,12 +1,10 @@
 //
 //  global.swift
-//  SwiftPlayer
 //
 //  Created by iqiyi on 2020/12/3.
 //
 
 import Foundation
-
 #if canImport(mdk)
 import mdk
 #endif
@@ -18,7 +16,7 @@ public enum MediaType : Int32 {
     case Audio = 1
     case Subtitle = 2
 }
-// TODO: RawOptionSet?
+
 public struct MediaStatus : RawRepresentable {
     public let rawValue: Int32
     public init(rawValue: Int32) {
@@ -74,12 +72,14 @@ public func version() ->Int32 {
     return MDK_version()
 }
 
-public func setLogLevel(_ value : LogLevel) {
-    MDK_setLogLevel(MDK_LogLevel(value.rawValue))
-}
+public var logLevel : LogLevel {
+    get {
+        LogLevel(rawValue: MDK_logLevel().rawValue)!
+    }
 
-public func logLevel() ->LogLevel {
-    return LogLevel(rawValue: MDK_logLevel().rawValue)!
+    set {
+        MDK_setLogLevel(MDK_LogLevel(newValue.rawValue))
+    }
 }
 
 public typealias LogHandler = (LogLevel,String)->Void
@@ -104,11 +104,9 @@ public func setLogHandler(_ callback:LogHandler?) {
     }
     h.cb = _f
     MDK_setLogHandler(h)
-    // TODO: reset before H.cb destroyed
 }
 
 public func setGlobalOption<T>(name:String, value:T) {
-    //var ptr = UnsafePointer(&s.utf8CString)
     if let v = value as? String {
         v.withCString({
             MDK_setGlobalOptionString(name, $0)

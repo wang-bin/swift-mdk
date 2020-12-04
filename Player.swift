@@ -1,6 +1,5 @@
 //
 //  Player.swift
-//  SwiftPlayer
 //
 //  Created by WangBin on 2020/12/1.
 //
@@ -19,7 +18,7 @@ public enum MapDirection : UInt32 {
 }
 
 // for char* const []
-func withArrayOfCStrings<R>(
+internal func withArrayOfCStrings<R>(
     _ args: [String],
     _ body: ([UnsafeMutablePointer<CChar>?]) -> R
 ) -> R {
@@ -32,27 +31,24 @@ func withArrayOfCStrings<R>(
 }
 
 
-func bridge<T : AnyObject>(obj : T?) -> UnsafeRawPointer? {
+internal func bridge<T : AnyObject>(obj : T?) -> UnsafeRawPointer? {
     guard let o = obj else {
         return nil
     }
     return UnsafeRawPointer(Unmanaged.passUnretained(o).toOpaque())
 }
 
-func bridge<T : AnyObject>(obj : T?) -> UnsafeMutableRawPointer? {
+internal func bridge<T : AnyObject>(obj : T?) -> UnsafeMutableRawPointer? {
     guard let o = obj else {
         return nil
     }
     return UnsafeMutableRawPointer(Unmanaged.passUnretained(o).toOpaque())
 }
 
-func bridge<T : AnyObject>(ptr : UnsafeRawPointer) -> T {
+internal func bridge<T : AnyObject>(ptr : UnsafeRawPointer) -> T {
     return Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
 }
 
-func address(o: UnsafeRawPointer) -> OpaquePointer {
-    return unsafeBitCast(o, to: OpaquePointer.self)
-}
 
 class Player {
     public var mute = false {
@@ -105,9 +101,7 @@ class Player {
     }
 
     public var mediaStatus : MediaStatus {
-        get {
-            return MediaStatus(rawValue: player.pointee.mediaStatus(player.pointee.object).rawValue)
-        }
+        MediaStatus(rawValue: player.pointee.mediaStatus(player.pointee.object).rawValue)
     }
 
     public var loop:Int32 = 0 {
@@ -123,9 +117,7 @@ class Player {
     }
 
     public var position : Int64 {
-        get {
-            player.pointee.position(player.pointee.object)
-        }
+        player.pointee.position(player.pointee.object)
     }
 
     public var playbackRate : Float = 1.0 {
@@ -134,7 +126,13 @@ class Player {
         }
     }
 
+    public var mediaInfo : MediaInfo {
+        from(c:player.pointee.mediaInfo(player.pointee.object), to:&info)
+        return info
+    }
+
     private var player : UnsafePointer<mdkPlayerAPI>! = mdkPlayerAPI_new()
+    private var info = MediaInfo()
 
     deinit {
         mdkPlayerAPI_delete(&player)
@@ -322,7 +320,6 @@ class Player {
         player.pointee.setVideoEffect(player.pointee.object, MDK_VideoEffect(effect.rawValue), values, bridge(obj: vid))
     }
 
-    // TODO: vo_opaque
     public func setRenderCallback(_ callback:(()->Void)?) -> Void {
         typealias Callback = ()->Void
         func f_(vo_opaque:UnsafeMutableRawPointer?, opaque:UnsafeMutableRawPointer?)->Void {
