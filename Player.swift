@@ -6,6 +6,7 @@
 #if canImport(mdk)
 import mdk
 #endif
+
 import MetalKit
 // https://stackoverflow.com/questions/43880839/swift-unable-to-cast-function-pointer-to-void-for-use-in-c-style-third-party
 // https://stackoverflow.com/questions/37401959/how-can-i-get-the-memory-address-of-a-value-type-or-a-custom-struct-in-swift
@@ -163,6 +164,10 @@ class Player {
         ra.opaque = bridge(obj: mkv)
         ra.currentRenderTarget = currentRt
         setRendAPI(&ra, vid:vid)
+    }
+
+    public func addRenderTarget(_ mkv : MTKView, commandQueue cmdQueue: MTLCommandQueue) -> Void {
+        setRenderTarget(mkv, commandQueue: cmdQueue, vid: mkv)
     }
 
     public func setVideoSurfaceSize(_ width : CGFloat, _ height : CGFloat, vid:AnyObject? = nil)->Void {
