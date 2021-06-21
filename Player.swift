@@ -77,7 +77,7 @@ class Player {
                 //let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0))
                 $0.withUnsafeBufferPointer({
                     let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0.baseAddress))
-                    player.pointee.setAudioDecoders(player.pointee.object, ptr)
+                    player.pointee.setDecoders(player.pointee.object, MDK_MediaType_Audio, ptr)
                 })
             }
         }
@@ -89,9 +89,27 @@ class Player {
                 //let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0))
                 $0.withUnsafeBufferPointer({
                     let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0.baseAddress))
-                    player.pointee.setVideoDecoders(player.pointee.object, ptr)
+                    player.pointee.setDecoders(player.pointee.object, MDK_MediaType_Video, ptr)
                 })
             }
+        }
+    }
+
+    public var activeAudioTracks = [0] {
+        didSet {
+            setActiveTracks(type: .Audio, tracks: activeAudioTracks)
+        }
+    }
+
+    public var activeVideoTracks = [0] {
+        didSet {
+            setActiveTracks(type: .Video, tracks: activeVideoTracks)
+        }
+    }
+
+    public var activeSubtitleTracks = [0] {
+        didSet {
+            setActiveTracks(type: .Subtitle, tracks: activeSubtitleTracks)
         }
     }
 
@@ -377,7 +395,7 @@ class Player {
         return player.pointee.buffered(player.pointee.object, nil)
     }
 
-    public func setBufferRange(msMin:Int64/* = 4000*/, msMax:Int64 = 16000, drop:Bool = false) -> Void {
+    public func setBufferRange(msMin:Int64 = -1, msMax:Int64 = -1, drop:Bool = false) -> Void {
         player.pointee.setBufferRange(player.pointee.object, msMin, msMax, drop)
     }
 
@@ -432,6 +450,15 @@ class Player {
     }
 
     // TODO: updateNativeSurface
+
+    // TODO: nil is all
+    private func setActiveTracks(type:MediaType, tracks:[Int]) {
+        tracks.withUnsafeBufferPointer({ [weak self] bp in
+            guard let self = self else {return}
+            self.player.pointee.setActiveTracks(self.player.pointee.object, MDK_MediaType(type.rawValue), UnsafePointer<Int32>(OpaquePointer(bp.baseAddress)), tracks.count)
+
+        })
+    }
 
     private var prepare_cb : UnsafeMutableRawPointer? //((Int64, inout Bool)->Bool)?
     private var current_cb_ : UnsafeMutableRawPointer? // ()->Void

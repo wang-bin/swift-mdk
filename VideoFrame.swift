@@ -89,4 +89,8 @@ public class VideoFrame {
         let p = frame.pointee.to(frame.pointee.object, MDK_PixelFormat(format.rawValue), width, height)
         return VideoFrame(p)
     }
+
+    public func save(fileName:String, format:String? = nil, quality:Float)->Bool {
+        return frame.pointee.save(frame.pointee.object, fileName, format, quality)
+    }
 }

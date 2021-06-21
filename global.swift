@@ -46,6 +46,7 @@ public enum SeekFlag : UInt32 {
     case From0 = 1
     case FromStart = 2
     case FromNow = 4
+    case Frame = 64
     case KeyFrame = 256
     case FastFrom0 = 257
     case FastFromNow = 260
