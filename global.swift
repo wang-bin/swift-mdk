@@ -69,6 +69,12 @@ public enum LogLevel : UInt32 {
     case All = 5
 }
 
+public enum ColorSpace : UInt32 {
+    case Unknown = 0
+    case BT709 = 1
+    case BT2020_PQ = 2
+}
+
 public func version() ->Int32 {
     return MDK_version()
 }

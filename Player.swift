@@ -181,6 +181,7 @@ class Player {
         ra.cmdQueue = bridge(obj: cmdQueue)
         ra.opaque = bridge(obj: mkv)
         ra.currentRenderTarget = currentRt
+        ra.layer = bridge(obj: mkv.layer)
         setRendAPI(&ra, vid:vid)
     }
 
@@ -341,6 +342,10 @@ class Player {
 
     public func set(effect:VideoEffect, values:[Float], vid:AnyObject? = nil) -> Void {
         player.pointee.setVideoEffect(player.pointee.object, MDK_VideoEffect(effect.rawValue), values, bridge(obj: vid))
+    }
+
+    func set(colorSpace:ColorSpace, vid:AnyObject? = nil) -> Void {
+        player.pointee.setColorSpace(player.pointee.object, MDK_ColorSpace(colorSpace.rawValue), bridge(obj: vid))
     }
 
     public func setRenderCallback(_ callback:(()->Void)?) -> Void {
