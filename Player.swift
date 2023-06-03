@@ -31,7 +31,6 @@ internal func withArrayOfCStrings<R>(
     return body(cStrings)
 }
 
-
 internal func bridge<T : AnyObject>(obj : T?) -> UnsafeRawPointer? {
     guard let o = obj else {
         return nil
@@ -155,7 +154,6 @@ class Player {
 
     deinit {
         mdkPlayerAPI_delete(&player)
-        // TODO: deallocate callbacks?
     }
 
     public func setRendAPI(_ api :  UnsafePointer<mdkMetalRenderAPI>, vid:AnyObject? = nil) ->Void {
@@ -207,79 +205,59 @@ class Player {
 
     public func currentMediaChanged(_ callback:(()->Void)?) {
         func f_(opaque:UnsafeMutableRawPointer?) {
-            let f = opaque?.load(as: (()->Void).self)
-            f!()
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.current_cb_?()
         }
+        current_cb_ = callback
         var cb = mdkCurrentMediaChangedCallback()
         cb.cb = f_
         if callback != nil {
-            if current_cb_ == nil {
-                current_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<()>.stride, alignment: MemoryLayout<()>.alignment)
-            }
-            cb.opaque = current_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.currentMediaChanged(player.pointee.object, cb)
     }
 
     public func setTimeout(_ value:Int64, callback:((Int64)->Bool)?) -> Void {
-        typealias Callback = (Int64)->Bool
         func f_(value:Int64, opaque:UnsafeMutableRawPointer?)->Bool {
-            let f = opaque?.load(as: Callback.self)
-            return f!(value)
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.timeout_cb_!(value)
         }
+        timeout_cb_ = callback
         var cb = mdkTimeoutCallback()
         cb.cb = f_
         if callback != nil {
-            if timeout_cb_ == nil {
-                timeout_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = timeout_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.setTimeout(player.pointee.object, value, cb)
     }
 
     public func prepare(from:Int64, complete:((Int64, inout Bool)->Bool)?, _ flag:SeekFlag = .Default) {
-        typealias Callback = (Int64, inout Bool)->Bool
-        func _f(pos:Int64, boost:UnsafeMutablePointer<Bool>?, opaque:UnsafeMutableRawPointer?)->Bool {
-            let f = opaque?.load(as: (Callback).self)
+        func f_(pos:Int64, boost:UnsafeMutablePointer<Bool>?, opaque:UnsafeMutableRawPointer?)->Bool {
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             var _boost = true
-            let ret = f!(pos, &_boost)
-            boost?.assign(from: &_boost, count: 1)
+            let ret = obj.prepare_cb_!(pos, &_boost)
+            boost?.update(from: &_boost, count: 1)
             return ret
         }
+        prepare_cb_ = complete
         var cb = mdkPrepareCallback()
+        cb.cb = f_
         if complete != nil {
-            if prepare_cb == nil {
-                prepare_cb = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            //cb.opaque = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<(Int64, inout Bool)->Bool>.stride, alignment: MemoryLayout<(Int64, inout Bool)->Bool>.alignment)
-            cb.opaque = prepare_cb
-            var tmp = complete
-            cb.opaque.initializeMemory(as: type(of: complete), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
-        cb.cb = _f
         player.pointee.prepare(player.pointee.object, from, cb, MDKSeekFlag(flag.rawValue))
     }
 
     public func onStateChanged(callback:((State)->Void)?) -> Void {
-        typealias Callback = (State)->Void
         func f_(state:MDK_State, opaque:UnsafeMutableRawPointer?)->Void {
-            let f = opaque?.load(as: Callback.self)
-            f!(State(rawValue: state.rawValue)!)
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.state_cb_!(State(rawValue: state.rawValue)!)
         }
+        state_cb_ = callback
         var cb = mdkStateChangedCallback()
         cb.cb = f_
         if callback != nil {
-            if state_cb_ == nil {
-                state_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = state_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.onStateChanged(player.pointee.object, cb)
     }
@@ -289,20 +267,15 @@ class Player {
     }
 
     public func onMediaStatusChanged(callback:((MediaStatus)->Bool)?) {
-        typealias Callback = (MediaStatus)->Bool
         func f_(status:MDK_MediaStatus, opaque:UnsafeMutableRawPointer?)->Bool {
-            let f = opaque?.load(as: Callback.self)
-            return f!(MediaStatus(rawValue: status.rawValue))
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.status_cb_!(MediaStatus(rawValue: status.rawValue))
         }
+        status_cb_ = callback
         var cb = mdkMediaStatusChangedCallback()
         cb.cb = f_
         if callback != nil {
-            if status_cb_ == nil {
-                status_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = status_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.onMediaStatusChanged(player.pointee.object, cb)
     }
@@ -349,20 +322,15 @@ class Player {
     }
 
     public func setRenderCallback(_ callback:(()->Void)?) -> Void {
-        typealias Callback = ()->Void
         func f_(vo_opaque:UnsafeMutableRawPointer?, opaque:UnsafeMutableRawPointer?)->Void {
-            let f = opaque?.load(as: Callback.self)
-            return f!()
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.render_cb_!()
         }
+        render_cb_ = callback
         var cb = mdkRenderCallback()
         cb.cb = f_
         if callback != nil {
-            if render_cb_ == nil {
-                render_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = render_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.setRenderCallback(player.pointee.object, cb)
     }
@@ -372,18 +340,14 @@ class Player {
     public func seek(_ pos:Int64, flags:SeekFlag, callback:((Int64)->Void)?) -> Bool {
         typealias Callback = (Int64)->Void
         func f_(ms:Int64, opaque:UnsafeMutableRawPointer?)->Void {
-            let f = opaque?.load(as: Callback.self)
-            return f!(ms)
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.seek_cb_!(ms)
         }
+        seek_cb_ = callback
         var cb = mdkSeekCallback()
         cb.cb = f_
         if callback != nil {
-            if seek_cb_ == nil {
-                seek_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = seek_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         return player.pointee.seekWithFlags(player.pointee.object, pos, MDK_SeekFlag(rawValue: flags.rawValue), cb)
     }
@@ -405,20 +369,15 @@ class Player {
     }
 
     public func swithBitrate(url:String, delay:Int64 = -1, callback:((Bool)->Void)?) -> Void {
-        typealias Callback = (Bool)->Void
         func f_(result:Bool, opaque:UnsafeMutableRawPointer?)->Void {
-            let f = opaque?.load(as: Callback.self)
-            return f!(result)
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.switch_cb_!(result)
         }
+        switch_cb_ = callback
         var cb = SwitchBitrateCallback()
         cb.cb = f_
         if callback != nil {
-            if switch_cb_ == nil {
-                switch_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-            }
-            cb.opaque = switch_cb_
-            var tmp = callback
-            cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+            cb.opaque = bridge(obj: self)!
         }
         player.pointee.switchBitrate(player.pointee.object, url, delay, cb)
     }
@@ -438,19 +397,14 @@ class Player {
     }
 
     public func onSync(_ callback:@escaping ()->Double, minInterval:Int32 = 10) -> Void {
-        typealias Callback = ()->Double
         func f_(opaque:UnsafeMutableRawPointer?)->Double {
-            let f = opaque?.load(as: Callback.self)
-            return f!()
+            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            return obj.sync_cb_!()
         }
+        sync_cb_ = callback
         var cb = mdkSyncCallback()
         cb.cb = f_
-        if sync_cb_ == nil {
-            sync_cb_ = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<Callback>.stride, alignment: MemoryLayout<Callback>.alignment)
-        }
-        cb.opaque = sync_cb_
-        var tmp = callback
-        cb.opaque.initializeMemory(as: type(of: callback), from: &tmp, count: 1)
+        cb.opaque = bridge(obj: self)!
         player.pointee.onSync(player.pointee.object, cb, minInterval)
     }
 
@@ -465,13 +419,13 @@ class Player {
         })
     }
 
-    private var prepare_cb : UnsafeMutableRawPointer? //((Int64, inout Bool)->Bool)?
-    private var current_cb_ : UnsafeMutableRawPointer? // ()->Void
-    private var timeout_cb_ : UnsafeMutableRawPointer? // (Int64)->Bool
-    private var state_cb_ : UnsafeMutableRawPointer? // (State)->Void
-    private var status_cb_ : UnsafeMutableRawPointer? // (MediaStatus)->Bool
-    private var render_cb_ : UnsafeMutableRawPointer? // ()->Void
-    private var seek_cb_ : UnsafeMutableRawPointer? // (Int64)->Void
-    private var switch_cb_ : UnsafeMutableRawPointer? // (Bool)->Void
-    private var sync_cb_ : UnsafeMutableRawPointer? // ()->Double
+    private var prepare_cb_ : ((Int64, inout Bool)->Bool)?
+    private var current_cb_ : (()->Void)?
+    private var timeout_cb_ : ((Int64)->Bool)?
+    private var state_cb_ : ((State)->Void)?
+    private var status_cb_ : ((MediaStatus)->Bool)?
+    private var render_cb_ : (()->Void)?
+    private var seek_cb_ : ((Int64)->Void)?
+    private var switch_cb_ : ((Bool)->Void)?
+    private var sync_cb_ : (()->Double)?
 }
