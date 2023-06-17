@@ -74,6 +74,7 @@ class Player {
         didSet {
             withArrayOfCStrings(audioDecoders) {
                 //let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0))
+                // TODO: ends with nullptr
                 $0.withUnsafeBufferPointer({
                     let ptr = UnsafeMutablePointer<UnsafePointer<Int8>?>(OpaquePointer($0.baseAddress))
                     player.pointee.setDecoders(player.pointee.object, MDK_MediaType_Audio, ptr)
@@ -149,14 +150,8 @@ class Player {
         return info
     }
 
-    private var player : UnsafePointer<mdkPlayerAPI>! = mdkPlayerAPI_new()
-    private var info = MediaInfo()
 
-    deinit {
-        mdkPlayerAPI_delete(&player)
-    }
-
-    public func setRendAPI(_ api :  UnsafePointer<mdkMetalRenderAPI>, vid:AnyObject? = nil) ->Void {
+    public func setRenderAPI(_ api :  UnsafePointer<mdkMetalRenderAPI>, vid:AnyObject? = nil) ->Void {
         player.pointee.setRenderAPI(player.pointee.object, OpaquePointer(api), bridge(obj: vid))
     }
 
@@ -180,7 +175,7 @@ class Player {
         ra.opaque = bridge(obj: mkv)
         ra.currentRenderTarget = currentRt
         ra.layer = bridge(obj: mkv.layer)
-        setRendAPI(&ra, vid:vid)
+        setRenderAPI(&ra, vid:vid)
     }
 
     public func addRenderTarget(_ mkv : MTKView, commandQueue cmdQueue: MTLCommandQueue) -> Void {
@@ -396,6 +391,14 @@ class Player {
         player.pointee.setRange(player.pointee.object, msA, msB)
     }
 
+    public func setProperty(name:String, value:String) -> Void {
+        player.pointee.setProperty(player.pointee.object, name, value)
+    }
+
+    /*public func property(name:String) -> String? {
+        return player.pointee.getProperty(player.pointee.object, name)
+    }*/
+
     public func onSync(_ callback:@escaping ()->Double, minInterval:Int32 = 10) -> Void {
         func f_(opaque:UnsafeMutableRawPointer?)->Double {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
@@ -418,6 +421,27 @@ class Player {
 
         })
     }
+
+    init() {
+        player = mdkPlayerAPI_new()
+        owner_ = true
+    }
+
+    // Player(UnsafePointer<mdkPlayerAPI>(OpaquePointer(bitPattern: Int(handle))))
+    init(_ ptr: UnsafePointer<mdkPlayerAPI>!) {
+        player = ptr
+        owner_ = false
+    }
+
+    deinit {
+        if (owner_) {
+            mdkPlayerAPI_delete(&player)
+        }
+    }
+
+    private var player : UnsafePointer<mdkPlayerAPI>!
+    private var info = MediaInfo()
+    private var owner_ = true
 
     private var prepare_cb_ : ((Int64, inout Bool)->Bool)?
     private var current_cb_ : (()->Void)?

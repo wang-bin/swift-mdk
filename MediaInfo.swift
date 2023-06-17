@@ -56,29 +56,42 @@ public struct VideoCodecParameters {
 }
 
 public struct VideoStreamInfo {
-
     public var index: Int32 = 0
-
     public var start_time: Int64 = 0
-
     public var duration: Int64 = 0
-
     public var frames: Int64 = 0
 
     public var rotation: Int32 = 0
-
     public var metadata = [String:String]()
-
     public var codec = VideoCodecParameters()
 }
 
-public struct ChapterInfo {
+public struct SubtitleCodecParameters {
+    public var codec: String!
+    public var codec_tag: UInt32 = 0
+    public var extra_data = [UInt8]() /* without padding data */
+    public var width: Int32 = 0
+    public var height: Int32 = 0
+}
 
+public struct SubtitleStreamInfo {
+    public var index: Int32 = 0
     public var start_time: Int64 = 0
+    public var duration: Int64 = 0
+    public var metadata = [String:String]()
+    public var codec = SubtitleCodecParameters()
+}
 
+public struct ChapterInfo {
+    public var start_time: Int64 = 0
     public var end_time: Int64 = 0
-
     public var title: String? // nil if no title
+}
+
+public struct ProgramInfo {
+    public var id: Int32 = 0
+    public var stream = [Int32]()
+    public var metadata = [String:String]()
 }
 
 public struct MediaInfo {
@@ -99,8 +112,10 @@ public struct MediaInfo {
     public var metadata = [String:String]()
 
     public var audio = [AudioStreamInfo]()
-
     public var video = [VideoStreamInfo]()
+    public var subtitle = [SubtitleStreamInfo]()
+    
+    public var program = [ProgramInfo]()
 }
 
 private func from(c cp:mdkAudioCodecParameters, to p:inout AudioCodecParameters) -> Void {
@@ -139,6 +154,16 @@ private func from(c cp:mdkVideoCodecParameters, to p:inout VideoCodecParameters)
     p.width = cp.width
     p.height = cp.height
     p.b_frames = cp.b_frames
+}
+
+private func from(c cp:mdkSubtitleCodecParameters, to p:inout SubtitleCodecParameters) -> Void {
+    p.codec = String(cString: cp.codec)
+    p.codec_tag = cp.codec_tag
+    if cp.extra_data != nil && cp.extra_data_size > 0 {
+        p.extra_data = Array(UnsafeBufferPointer(start: cp.extra_data, count: Int(cp.extra_data_size)))
+    }
+    p.width = cp.width
+    p.height = cp.height
 }
 
 internal func from(c pcinfo:UnsafePointer<mdkMediaInfo>?, to info:inout MediaInfo) -> Void {
@@ -200,5 +225,35 @@ internal func from(c pcinfo:UnsafePointer<mdkMediaInfo>?, to info:inout MediaInf
             si.metadata[String(cString: e.key)] = String(cString: e.value)
         }
         info.video.append(si)
+    }
+    
+    for i in 0..<Int(cinfo.nb_subtitle) {
+        var si = SubtitleStreamInfo()
+        var csi = cinfo.subtitle[i]
+        si.index = csi.index
+        si.start_time = csi.start_time
+        si.duration = csi.duration
+        var cc = mdkSubtitleCodecParameters()
+        MDK_SubtitleStreamCodecParameters(&csi, &cc)
+        from(c: cc, to: &si.codec)
+        var e = mdkStringMapEntry()
+        while MDK_SubtitleStreamMetadata(&csi, &e) {
+            si.metadata[String(cString: e.key)] = String(cString: e.value)
+        }
+        info.subtitle.append(si)
+    }
+    
+    for i in 0..<Int(cinfo.nb_programs) {
+        var cpi = cinfo.programs[i]
+        var pi = ProgramInfo()
+        pi.id = cpi.id
+        for j in 0..<Int(cpi.nb_stream) {
+            pi.stream.append(cpi.stream[j])
+        }
+        var e = mdkStringMapEntry()
+        while MDK_ProgramMetadata(&cpi, &e) {
+            pi.metadata[String(cString: e.key)] = String(cString: e.value)
+        }
+        info.program.append(pi)
     }
 }

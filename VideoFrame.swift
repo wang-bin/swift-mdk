@@ -42,6 +42,10 @@ public class VideoFrame {
     private init(_ ptr : UnsafeMutablePointer<mdkVideoFrameAPI>!) {
         frame = ptr
     }
+    
+    deinit {
+        mdkVideoFrameAPI_delete(&frame)
+    }
 
     public var planeCount : Int32 {
         frame.pointee.planeCount(frame.pointee.object)
