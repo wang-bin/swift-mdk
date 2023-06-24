@@ -231,7 +231,7 @@ class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             var _boost = true
             let ret = obj.prepare_cb_!(pos, &_boost)
-            boost?.update(from: &_boost, count: 1)
+            boost?.update(repeating: _boost, count: 1)
             return ret
         }
         prepare_cb_ = complete
