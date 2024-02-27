@@ -91,23 +91,23 @@ public var logLevel : LogLevel {
 
 public typealias LogHandler = (LogLevel,String)->Void
 public func setLogHandler(_ callback:LogHandler?) {
+    class L {
+        var cb : LogHandler?
+    }
     struct H {
-        static var cb : UnsafeMutableRawPointer? //LogHandler?
+        static var l = L()
     }
-    if H.cb == nil {
-        H.cb = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<LogHandler>.stride, alignment: MemoryLayout<LogHandler>.alignment)
-    }
-    var tmp = callback
-    H.cb?.initializeMemory(as: LogHandler.self, from: &tmp!, count: 1)
+
+    H.l.cb = callback
     func _f(level : MDK_LogLevel, msg : UnsafePointer<CChar>?, opaque : UnsafeMutableRawPointer?) {
-        let f = opaque?.load(as: LogHandler.self)
-        f!(LogLevel(rawValue: level.rawValue)!, String(cString: msg!))
+        let obj = Unmanaged<L>.fromOpaque(opaque!).takeUnretainedValue()
+        obj.cb?(LogLevel(rawValue: level.rawValue)!, String(cString: msg!))
     }
     var h = mdkLogHandler()
     if callback == nil {
         h.opaque = nil
     } else {
-        h.opaque = H.cb
+        h.opaque = bridge(obj: H.l)
     }
     h.cb = _f
     MDK_setLogHandler(h)
