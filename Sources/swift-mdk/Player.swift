@@ -50,7 +50,7 @@ internal func bridge<T : AnyObject>(ptr : UnsafeRawPointer) -> T {
 }
 
 
-class Player {
+public class Player {
     public var mute = false {
         didSet {
             player.pointee.setMute(player.pointee.object, mute)
@@ -314,7 +314,7 @@ class Player {
         player.pointee.setVideoEffect(player.pointee.object, MDK_VideoEffect(effect.rawValue), values, bridge(obj: vid))
     }
 
-    func set(colorSpace:ColorSpace, vid:AnyObject? = nil) -> Void {
+    public func set(colorSpace:ColorSpace, vid:AnyObject? = nil) -> Void {
         player.pointee.setColorSpace(player.pointee.object, MDK_ColorSpace(colorSpace.rawValue), bridge(obj: vid))
     }
 
@@ -430,13 +430,13 @@ class Player {
         })
     }
 
-    init() {
+    public init() {
         player = mdkPlayerAPI_new()
         owner_ = true
     }
 
     // Player(UnsafePointer<mdkPlayerAPI>(OpaquePointer(bitPattern: Int(handle))))
-    init(_ ptr: UnsafePointer<mdkPlayerAPI>!) {
+    public init(_ ptr: UnsafePointer<mdkPlayerAPI>!) {
         player = ptr
         owner_ = false
     }
