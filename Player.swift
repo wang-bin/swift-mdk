@@ -154,8 +154,9 @@ class Player {
     public func setRenderAPI(_ api :  UnsafePointer<mdkMetalRenderAPI>, vid:AnyObject? = nil) ->Void {
         player.pointee.setRenderAPI(player.pointee.object, OpaquePointer(api), bridge(obj: vid))
     }
-
-    // TODO: UIView, NSView, GLKView. addRenderTarget, removeRenderTarget
+    
+    // TODO: addRenderTarget, removeRenderTarget
+    @available(visionOS, unavailable)
     public func setRenderTarget(_ mkv : MTKView, commandQueue cmdQueue: MTLCommandQueue, vid:AnyObject? = nil) ->Void {
         func currentRt(_ opaque: UnsafeRawPointer?)->UnsafeRawPointer? {
             guard let p = opaque else {
@@ -178,6 +179,7 @@ class Player {
         setRenderAPI(&ra, vid:vid)
     }
 
+    @available(visionOS, unavailable)
     public func addRenderTarget(_ mkv : MTKView, commandQueue cmdQueue: MTLCommandQueue) -> Void {
         setRenderTarget(mkv, commandQueue: cmdQueue, vid: mkv)
     }
@@ -411,7 +413,13 @@ class Player {
         player.pointee.onSync(player.pointee.object, cb, minInterval)
     }
 
-    // TODO: updateNativeSurface
+    // surface: UIView, NSView, CALayer
+    public func updateNativeSurface(_ surface: AnyObject, width : Int32, height : Int32) {
+        var ra = mdkMetalRenderAPI()
+        ra.type = MDK_RenderAPI_Metal
+        setRenderAPI(&ra, vid: surface)
+        player.pointee.updateNativeSurface(player.pointee.object, bridge(obj: surface), width, height, MDK_SurfaceType(0));
+    }
 
     // TODO: nil is all
     private func setActiveTracks(type:MediaType, tracks:[Int]) {
