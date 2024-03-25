@@ -42,7 +42,7 @@ public class VideoFrame {
     private init(_ ptr : UnsafeMutablePointer<mdkVideoFrameAPI>!) {
         frame = ptr
     }
-    
+
     deinit {
         mdkVideoFrameAPI_delete(&frame)
     }
