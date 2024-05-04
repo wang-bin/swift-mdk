@@ -49,6 +49,20 @@ internal func bridge<T : AnyObject>(ptr : UnsafeRawPointer) -> T {
     return Unmanaged<T>.fromOpaque(ptr).takeUnretainedValue()
 }
 
+internal func bridgeRetain<T : AnyObject>(obj : T?) -> UnsafeRawPointer? {
+    guard let o = obj else {
+        return nil
+    }
+    return UnsafeRawPointer(Unmanaged.passRetained(o).toOpaque())
+}
+
+internal func bridgeRetain<T : AnyObject>(obj : T?) -> UnsafeMutableRawPointer? {
+    guard let o = obj else {
+        return nil
+    }
+    return UnsafeMutableRawPointer(Unmanaged.passRetained(o).toOpaque())
+}
+
 
 public class Player {
     public var mute = false {
@@ -154,7 +168,7 @@ public class Player {
     public func setRenderAPI(_ api :  UnsafePointer<mdkMetalRenderAPI>, vid:AnyObject? = nil) ->Void {
         player.pointee.setRenderAPI(player.pointee.object, OpaquePointer(api), bridge(obj: vid))
     }
-    
+
     // TODO: addRenderTarget, removeRenderTarget
     @available(visionOS, unavailable)
     public func setRenderTarget(_ mkv : MTKView, commandQueue cmdQueue: MTLCommandQueue, vid:AnyObject? = nil) ->Void {
@@ -203,9 +217,13 @@ public class Player {
     public func currentMediaChanged(_ callback:(()->Void)?) {
         func f_(opaque:UnsafeMutableRawPointer?) {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.current_lock_.lock()
+            defer { obj.current_lock_.unlock() }
             obj.current_cb_?()
         }
+        current_lock_.lock()
         current_cb_ = callback
+        current_lock_.unlock()
         var cb = mdkCurrentMediaChangedCallback()
         cb.cb = f_
         if callback != nil {
@@ -217,9 +235,13 @@ public class Player {
     public func setTimeout(_ value:Int64, callback:((Int64)->Bool)?) -> Void {
         func f_(value:Int64, opaque:UnsafeMutableRawPointer?)->Bool {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.timeout_lock_.lock()
+            defer { obj.timeout_lock_.unlock() }
             return obj.timeout_cb_!(value)
         }
+        timeout_lock_.lock()
         timeout_cb_ = callback
+        timeout_lock_.unlock()
         var cb = mdkTimeoutCallback()
         cb.cb = f_
         if callback != nil {
@@ -229,18 +251,24 @@ public class Player {
     }
 
     public func prepare(from:Int64, complete:((Int64, inout Bool)->Bool)?, _ flag:SeekFlag = .Default) {
+        class CallbackObj {
+            var callback : ((Int64, inout Bool)->Bool)?
+        }
         func f_(pos:Int64, boost:UnsafeMutablePointer<Bool>?, opaque:UnsafeMutableRawPointer?)->Bool {
-            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            let obj = Unmanaged<CallbackObj>.fromOpaque(opaque!)
+            let p = obj.takeUnretainedValue()
             var _boost = true
-            let ret = obj.prepare_cb_!(pos, &_boost)
+            let ret = p.callback!(pos, &_boost)
+            obj.release()
             boost?.update(repeating: _boost, count: 1)
             return ret
         }
-        prepare_cb_ = complete
         var cb = mdkPrepareCallback()
         cb.cb = f_
         if complete != nil {
-            cb.opaque = bridge(obj: self)!
+            let obj = CallbackObj()
+            obj.callback = complete
+            cb.opaque = bridgeRetain(obj: obj)!
         }
         player.pointee.prepare(player.pointee.object, from, cb, MDKSeekFlag(flag.rawValue))
     }
@@ -248,9 +276,13 @@ public class Player {
     public func onStateChanged(callback:((State)->Void)?) -> Void {
         func f_(state:MDK_State, opaque:UnsafeMutableRawPointer?)->Void {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.state_lock_.lock()
+            defer { obj.state_lock_.unlock() }
             obj.state_cb_!(State(rawValue: state.rawValue)!)
         }
+        state_lock_.lock()
         state_cb_ = callback
+        state_lock_.unlock()
         var cb = mdkStateChangedCallback()
         cb.cb = f_
         if callback != nil {
@@ -266,9 +298,13 @@ public class Player {
     public func onMediaStatusChanged(callback:((MediaStatus)->Bool)?) {
         func f_(status:MDK_MediaStatus, opaque:UnsafeMutableRawPointer?)->Bool {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.status_lock_.lock()
+            defer { obj.status_lock_.unlock() }
             return obj.status_cb_!(MediaStatus(rawValue: status.rawValue))
         }
+        status_lock_.lock()
         status_cb_ = callback
+        status_lock_.unlock()
         var cb = mdkMediaStatusChangedCallback()
         cb.cb = f_
         if callback != nil {
@@ -321,9 +357,13 @@ public class Player {
     public func setRenderCallback(_ callback:(()->Void)?) -> Void {
         func f_(vo_opaque:UnsafeMutableRawPointer?, opaque:UnsafeMutableRawPointer?)->Void {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.render_lock_.lock()
+            defer { obj.render_lock_.unlock() }
             return obj.render_cb_!()
         }
+        render_lock_.lock()
         render_cb_ = callback
+        render_lock_.unlock()
         var cb = mdkRenderCallback()
         cb.cb = f_
         if callback != nil {
@@ -336,15 +376,21 @@ public class Player {
 
     public func seek(_ pos:Int64, flags:SeekFlag, callback:((Int64)->Void)?) -> Bool {
         typealias Callback = (Int64)->Void
-        func f_(ms:Int64, opaque:UnsafeMutableRawPointer?)->Void {
-            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
-            return obj.seek_cb_!(ms)
+        class CallbackObj {
+            var callback : ((Int64)->Void)?
         }
-        seek_cb_ = callback
+        func f_(ms:Int64, opaque:UnsafeMutableRawPointer?)->Void {
+            let obj = Unmanaged<CallbackObj>.fromOpaque(opaque!)
+            let p = obj.takeUnretainedValue()
+            p.callback?(ms)
+            obj.release()
+        }
         var cb = mdkSeekCallback()
         cb.cb = f_
         if callback != nil {
-            cb.opaque = bridge(obj: self)!
+            let obj = CallbackObj()
+            obj.callback = callback
+            cb.opaque = bridgeRetain(obj: obj)!
         }
         return player.pointee.seekWithFlags(player.pointee.object, pos, MDK_SeekFlag(rawValue: flags.rawValue), cb)
     }
@@ -366,15 +412,21 @@ public class Player {
     }
 
     public func swithBitrate(url:String, delay:Int64 = -1, callback:((Bool)->Void)?) -> Void {
-        func f_(result:Bool, opaque:UnsafeMutableRawPointer?)->Void {
-            let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
-            return obj.switch_cb_!(result)
+        class CallbackObj {
+            var callback : ((Bool)->Void)?
         }
-        switch_cb_ = callback
+        func f_(result:Bool, opaque:UnsafeMutableRawPointer?)->Void {
+            let obj = Unmanaged<CallbackObj>.fromOpaque(opaque!)
+            let p = obj.takeUnretainedValue()
+            p.callback?(result)
+            obj.release()
+        }
         var cb = SwitchBitrateCallback()
         cb.cb = f_
         if callback != nil {
-            cb.opaque = bridge(obj: self)!
+            let obj = CallbackObj()
+            obj.callback = callback
+            cb.opaque = bridgeRetain(obj: obj)!
         }
         player.pointee.switchBitrate(player.pointee.object, url, delay, cb)
     }
@@ -404,9 +456,13 @@ public class Player {
     public func onSync(_ callback:@escaping ()->Double, minInterval:Int32 = 10) -> Void {
         func f_(opaque:UnsafeMutableRawPointer?)->Double {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
+            obj.sync_lock_.lock()
+            defer { obj.sync_lock_.unlock() }
             return obj.sync_cb_!()
         }
+        sync_lock_.lock()
         sync_cb_ = callback
+        sync_lock_.unlock()
         var cb = mdkSyncCallback()
         cb.cb = f_
         cb.opaque = bridge(obj: self)!
@@ -451,13 +507,16 @@ public class Player {
     private var info = MediaInfo()
     private var owner_ = true
 
-    private var prepare_cb_ : ((Int64, inout Bool)->Bool)?
     private var current_cb_ : (()->Void)?
+    private let current_lock_ = NSLock()
     private var timeout_cb_ : ((Int64)->Bool)?
+    private let timeout_lock_ = NSLock()
     private var state_cb_ : ((State)->Void)?
+    private let state_lock_ = NSLock()
     private var status_cb_ : ((MediaStatus)->Bool)?
+    private let status_lock_ = NSLock()
     private var render_cb_ : (()->Void)?
-    private var seek_cb_ : ((Int64)->Void)?
-    private var switch_cb_ : ((Bool)->Void)?
+    private let render_lock_ = NSLock()
     private var sync_cb_ : (()->Double)?
+    private let sync_lock_ = NSLock()
 }
