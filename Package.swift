@@ -19,7 +19,7 @@ let package = Package(
         //.binaryTarget(name: "mdk-sdk", path: "mdk-sdk/lib/mdk.xcframework"),
         .binaryTarget(name: "mdk-sdk"
             , url: "https://sourceforge.net/projects/mdk-sdk/files/mdk-sdk-apple.zip"
-            , checksum: "f4a950692e8429653c222f2ffa9822ef90613e204c65b9f9178c02e3df933207"),
+            , checksum: "e830c8827c18d35a956c631210729e03bed990a0547493156a50fba11b5422f9"),
         .target(
             name: "swift-mdk",
             dependencies: ["mdk-sdk"]),
