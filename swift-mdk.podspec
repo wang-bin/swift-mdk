@@ -1,8 +1,8 @@
 Pod::Spec.new do |s|
     s.name              = 'swift-mdk'
-    s.version           = '0.25.1'
+    s.version           = '0.29.1'
     s.summary           = 'Multimedia Development Kit'
-    s.homepage          = 'https://github.com/wang-bin/mdkSwift'
+    s.homepage          = 'https://github.com/wang-bin/swift-mdk'
 
     s.author            = { 'Wang Bin' => 'wbsecg1@gmail.com' }
     s.license           = { :type => 'MIT', :text => <<-LICENSE
@@ -18,7 +18,7 @@ Pod::Spec.new do |s|
     s.ios.deployment_target = '12.0'
     s.tvos.deployment_target = '12.0'
     s.visionos.deployment_target = '1.0'
-    s.source            = { :git => 'https://github.com/wang-bin/mdkSwift.git' }
+    s.source            = { :git => 'https://github.com/wang-bin/swift-mdk.git' }
     s.source_files      = 'Sources/swift-mdk/*.swift'
     s.dependency        'mdk'
 end
