@@ -237,7 +237,7 @@ public class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             obj.timeout_lock_.lock()
             defer { obj.timeout_lock_.unlock() }
-            return obj.timeout_cb_!(value)
+            return obj.timeout_cb_?(value) ?? true
         }
         timeout_lock_.lock()
         timeout_cb_ = callback
@@ -278,7 +278,7 @@ public class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             obj.state_lock_.lock()
             defer { obj.state_lock_.unlock() }
-            obj.state_cb_!(State(rawValue: state.rawValue)!)
+            obj.state_cb_?(State(rawValue: state.rawValue)!)
         }
         state_lock_.lock()
         state_cb_ = callback
@@ -300,7 +300,7 @@ public class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             obj.status_lock_.lock()
             defer { obj.status_lock_.unlock() }
-            return obj.status_cb_!(MediaStatus(rawValue: status.rawValue))
+            return obj.status_cb_?(MediaStatus(rawValue: status.rawValue)) ?? true
         }
         status_lock_.lock()
         status_cb_ = callback
@@ -359,7 +359,7 @@ public class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             obj.render_lock_.lock()
             defer { obj.render_lock_.unlock() }
-            return obj.render_cb_!()
+            obj.render_cb_?()
         }
         render_lock_.lock()
         render_cb_ = callback
@@ -458,7 +458,7 @@ public class Player {
             let obj = Unmanaged<Player>.fromOpaque(opaque!).takeUnretainedValue()
             obj.sync_lock_.lock()
             defer { obj.sync_lock_.unlock() }
-            return obj.sync_cb_!()
+            return obj.sync_cb_?() ?? 0
         }
         sync_lock_.lock()
         sync_cb_ = callback
@@ -498,9 +498,7 @@ public class Player {
     }
 
     deinit {
-        if (owner_) {
-            mdkPlayerAPI_delete(&player)
-        }
+        mdkPlayerAPI_reset(&player, owner_)
     }
 
     private var player : UnsafePointer<mdkPlayerAPI>!
