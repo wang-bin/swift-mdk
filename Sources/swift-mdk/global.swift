@@ -89,7 +89,7 @@ public var logLevel : LogLevel {
     }
 }
 
-public typealias LogHandler = (LogLevel,String)->Void
+public typealias LogHandler = @Sendable (LogLevel,String)->Void
 public func setLogHandler(_ callback:LogHandler?) {
     class L {
         var cb : LogHandler?
