@@ -449,9 +449,12 @@ public class Player {
         player.pointee.setProperty(player.pointee.object, name, value)
     }
 
-    /*public func property(name:String) -> String? {
-        return player.pointee.getProperty(player.pointee.object, name)
-    }*/
+    public func property(name: String) -> String? {
+        guard let cString = player.pointee.getProperty(player.pointee.object, name) else {
+            return nil
+        }
+        return String(cString: cString)
+    }
 
     public func onSync(_ callback:@Sendable @escaping ()->Double, minInterval:Int32 = 10) -> Void {
         func f_(opaque:UnsafeMutableRawPointer?)->Double {

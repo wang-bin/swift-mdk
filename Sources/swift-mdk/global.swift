@@ -73,6 +73,10 @@ public enum ColorSpace : UInt32 {
     case Unknown = 0
     case BT709 = 1
     case BT2020_PQ = 2
+    case ExtendedLinearDisplayP3 = 4
+    case ExtendedSRGB = 5
+    case ExtendedLinearSRGB = 6
+    case BT2100_HLG = 7
 }
 
 public func version() ->Int32 {
