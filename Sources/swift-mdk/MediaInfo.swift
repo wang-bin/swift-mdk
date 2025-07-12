@@ -53,7 +53,7 @@ public struct VideoCodecParameters {
     public var width: Int32 = 0
     public var height: Int32 = 0
     public var b_frames: Int32 = 0
-    
+
     public var par: Float = 0
     public var color_space: ColorSpace = .Unknown
     public var dovi_profile: UInt8 = 0
@@ -118,7 +118,7 @@ public struct MediaInfo {
     public var audio = [AudioStreamInfo]()
     public var video = [VideoStreamInfo]()
     public var subtitle = [SubtitleStreamInfo]()
-    
+
     public var program = [ProgramInfo]()
 }
 
@@ -140,9 +140,6 @@ private func from(c cp:mdkAudioCodecParameters, to p:inout AudioCodecParameters)
     p.sample_rate = cp.sample_rate
     p.block_align = cp.block_align
     p.frame_size = cp.frame_size
-    p.par = cp.par
-    p.color_space = ColorSpace(rawValue: cp.color_space.rawValue) ?? .Unknown
-    p.dovi_profile = cp.dovi_profile
 }
 
 private func from(c cp:mdkVideoCodecParameters, to p:inout VideoCodecParameters) -> Void {
@@ -161,6 +158,9 @@ private func from(c cp:mdkVideoCodecParameters, to p:inout VideoCodecParameters)
     p.width = cp.width
     p.height = cp.height
     p.b_frames = cp.b_frames
+    p.par = cp.par
+    p.color_space = ColorSpace(rawValue: cp.color_space.rawValue) ?? .Unknown
+    p.dovi_profile = cp.dovi_profile
 }
 
 private func from(c cp:mdkSubtitleCodecParameters, to p:inout SubtitleCodecParameters) -> Void {
@@ -233,7 +233,7 @@ internal func from(c pcinfo:UnsafePointer<mdkMediaInfo>?, to info:inout MediaInf
         }
         info.video.append(si)
     }
-    
+
     for i in 0..<Int(cinfo.nb_subtitle) {
         var si = SubtitleStreamInfo()
         var csi = cinfo.subtitle[i]
@@ -249,7 +249,7 @@ internal func from(c pcinfo:UnsafePointer<mdkMediaInfo>?, to info:inout MediaInf
         }
         info.subtitle.append(si)
     }
-    
+
     for i in 0..<Int(cinfo.nb_programs) {
         var cpi = cinfo.programs[i]
         var pi = ProgramInfo()
