@@ -17,13 +17,13 @@ public enum MediaType : Int32 {
     case Subtitle = 2
 }
 
-public struct MediaStatus : RawRepresentable {
+public struct MediaStatus : OptionSet, Sendable {
     public let rawValue: Int32
     public init(rawValue: Int32) {
         self.rawValue = rawValue
     }
 
-    static let NoMedia = MediaStatus(rawValue: 0)
+    static let NoMedia = MediaStatus([])
     static let Unloaded = MediaStatus(rawValue: 1)
     static let Loading = MediaStatus(rawValue: 1<<1)
     static let Loaded = MediaStatus(rawValue: 1<<2)
@@ -99,7 +99,7 @@ public func setLogHandler(_ callback:LogHandler?) {
         var cb : LogHandler?
     }
     struct H {
-        static var l = L()
+        nonisolated(unsafe) static let l = L()
     }
 
     H.l.cb = callback
