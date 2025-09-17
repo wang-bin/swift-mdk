@@ -18,6 +18,10 @@ Pod::Spec.new do |s|
     s.ios.deployment_target = '12.0'
     s.tvos.deployment_target = '12.0'
     s.visionos.deployment_target = '1.0'
+    s.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'i386'}
+    s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'i386'}
+    s.visionos.pod_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'x86_64'} # optional?
+    s.visionos.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=*simulator*]' => 'x86_64'}
     s.source            = { :git => 'https://github.com/wang-bin/swift-mdk.git' }
     s.source_files      = 'Sources/swift-mdk/*.swift'
     s.dependency        'mdk'
