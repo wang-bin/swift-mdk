@@ -18,8 +18,8 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         //.binaryTarget(name: "mdk-sdk", path: "mdk-sdk/lib/mdk.xcframework"),
         .binaryTarget(name: "mdk-sdk"
-            , url: "https://github.com/wang-bin/mdk-sdk/releases/download/v0.35.0/mdk-sdk-apple.zip"
-            , checksum: "9876cd7c43888dcc9e1e136691d0c801915d341a819de96e7b069c5913f77cae"),
+            , url: "https://github.com/wang-bin/mdk-sdk/releases/download/v0.35.1/mdk-sdk-apple.zip"
+            , checksum: "510698c65c0851940e1b8872e7b713a0fb0f258b6266b0c4aa057e0d0523d937"),
         .target(
             name: "swift-mdk",
             dependencies: ["mdk-sdk"]),
