@@ -1,0 +1,18 @@
+name: Build
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  Pod:
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+    - uses: actions/checkout@v6
+    - name: Deploy to Cocoapods
+      run: |
+        set -eo pipefail
+        pod trunk push swift-mdk.podspec --allow-warnings --verbose
+      env:
+        COCOAPODS_TRUNK_TOKEN: ${{ secrets.COCOAPODS_TRUNK_TOKEN }}
